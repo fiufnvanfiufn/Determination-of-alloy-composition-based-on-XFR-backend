@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лента</title>
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+<body class="mobile-body feed-body">
+    <div class="feed-container">
+        <!-- Область артефакта -->
+        <div class="feed-media-wrapper">
+            <img src="{{ .alloy.ImageURL }}" alt="{{ .alloy.Title }}" class="feed-media">
+        </div>
+
+        <!-- Нижняя строка: карточка слева и кнопки справа -->
+        <div class="feed-bottom-row">
+<!-- Серая информационная карточка -->
+<!-- Серая информационная карточка -->
+        <div class="feed-info-card">
+            <div class="feed-title">{{ .alloy.Title }}</div>
+
+            <!-- Частота, которая видна всегда, вне кнопки "еще" -->
+            <div class="feed-energy-tag">
+                Высшая частота: {{ .alloy.EnergyKev }} кэВ
+            </div>
+            <div class="feed-energy-tag">
+                Вторая высшая: {{ .alloy.IntensityCps }} кэВ
+            </div>
+
+            <!-- Раскрывающийся блок с описанием -->
+            <details class="feed-details">
+                <summary>еще</summary>
+                <div class="feed-details-content">
+                    <p class="feed-description">{{ .alloy.Description }}</p>
+                </div>
+            </details>
+        </div>
+
+            <!-- Правая колонка действий -->
+            <div class="feed-actions">
+                <div class="heart-block">
+                    <div class="heart-circle">❤</div>
+                    <span class="likes-count">{{ .alloy.LikesCount }}</span>
+                </div>
+
+                <a href="/feed?id={{ .alloy.ID }}&next=true" class="next-circle-btn">➔</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя панель навигации -->
+    <div class="tab-bar">
+        <a href="/feed" class="active-tab">Лента</a>
+        <a href="/draft">Добавление</a>
+        <a href="/catalog">Каталог</a>
+    </div>
+</body>
+</html>
