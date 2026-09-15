@@ -31,8 +31,8 @@ func NewRepository() (*Repository, error) {
 			EnergyKev:    8.04,
 			IntensityCps: 7.21,
 			Status:       "published",
-			ImageURL:     "http://localhost:9000/media/514770_big.jpg",
-			VideoURL:     "http://localhost:9000/media/bronze_scan.mp4",
+			ImageURL:     "http://localhost:9000/media/бронза_картинка.jpg",
+			VideoURL:     "http://localhost:9000/media/бронза.mp4",
 			Likes:        []int{101, 102, 105},
 		},
 		{
@@ -59,46 +59,35 @@ func NewRepository() (*Repository, error) {
 		},
 		{
 			ID:           4,
-			Title:        "Серебро",
-			Description:  "Высокопробное серебро. Характерно для чеканки эпохи ранней Римской Империи.",
-			EnergyKev:    22.16, // Пик серебра
-			IntensityCps: 18500,
-			Status:       "published",
-			ImageURL:     "http://localhost:9000/media/silver_coin.jpg",
-			VideoURL:     "http://localhost:9000/media/silver_scan.mp4",
-			Likes:        []int{101, 105, 201}, // 3 лайка
-		},
-		{
-			ID:           5,
 			Title:        "Мышьяковистая бронза",
 			Description:  "Ранний бронзовый век. Сплав Cu-As, предшественник оловянной бронзы. Высокий пик мышьяка.",
 			EnergyKev:    10.53, // Пик мышьяка
-			IntensityCps: 11200,
+			IntensityCps: 83.07,
 			Status:       "published",
-			ImageURL:     "http://localhost:9000/media/arsenic_axe.jpg",
-			VideoURL:     "http://localhost:9000/media/arsenic_scan.mp4",
+			ImageURL:     "http://localhost:9000/media/мышьяковая_бронза.png",
+			VideoURL:     "http://localhost:9000/media/мышьяковая_бронза.mp4",
 			Likes:        []int{102, 103, 108, 110}, // 4 лайка
 		},
 		{
-			ID:           6,
+			ID:           5,
 			Title:        "Свинец",
 			Description:  "Вислая печать. Четкий пик свинца без значительных примесей серебра или олова.",
 			EnergyKev:    10.55, // Пик свинца
-			IntensityCps: 15600,
+			IntensityCps: 5.72,
 			Status:       "published",
-			ImageURL:     "http://localhost:9000/media/lead_seal.jpg",
-			VideoURL:     "http://localhost:9000/media/lead_scan.mp4",
+			ImageURL:     "http://localhost:9000/media/свинец.jpg",
+			VideoURL:     "http://localhost:9000/media/свинец.mp4",
 			Likes:        []int{105}, // 1 лайк
 		},
 		{
-			ID:           7,
+			ID:           6,
 			Title:        "Пьютер",
 			Description:  "Сплав на основе олова с добавлением меди и сурьмы. Свинец отсутствует, что типично для качественной кухонной утвари.",
 			EnergyKev:    25.27, // Эталонный пик олова
-			IntensityCps: 19800,
+			IntensityCps: 20.94,
 			Status:       "published",
-			ImageURL:     "http://localhost:9000/media/pewter_plate.jpg",
-			VideoURL:     "http://localhost:9000/media/pewter_scan.mp4",
+			ImageURL:     "http://localhost:9000/media/пьютер.webp",
+			VideoURL:     "http://localhost:9000/media/пьютер_видео.mp4",
 			Likes:        []int{103, 112}, // 2 лайка
 		},
 	}

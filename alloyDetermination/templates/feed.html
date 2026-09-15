@@ -10,7 +10,15 @@
     <div class="feed-container">
         <!-- Область артефакта -->
         <div class="feed-media-wrapper">
-            <img src="{{ .alloy.ImageURL }}" alt="{{ .alloy.Title }}" class="feed-media">
+            <video
+            src="{{ .alloy.VideoURL }}"
+            class="feed-media"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto">
+            </video>
         </div>
 
         <!-- Нижняя строка: карточка слева и кнопки справа -->
