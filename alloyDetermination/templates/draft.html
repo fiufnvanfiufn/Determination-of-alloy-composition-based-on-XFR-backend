@@ -9,8 +9,30 @@
 <body class="mobile-body draft-body">
     <div class="draft-container">
         <!-- Блоки медиа -->
-        <div class="draft-box">Видео:</div>
-        <div class="draft-box">Превью:</div>
+<!-- Блоки медиа (Отдельно от текста по заданию) -->
+        <div style="display: flex; gap: 12px; margin-bottom: 5px;">
+
+            <!-- Превью Видео -->
+            <div class="draft-box" style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;">
+                <span style="font-size: 11px; color: #666; margin-bottom: 5px;"></span>
+                {{ if .alloy.VideoURL }}
+                    <video src="{{ .alloy.VideoURL }}" style="width: 100%; height: 110px; object-fit: cover; background: #000; border-radius: 4px;" controls muted></video>
+                {{ else }}
+                    <div style="width: 100%; height: 90px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;">Нет видео</div>
+                {{ end }}
+            </div>
+
+            <!-- Превью Фото -->
+            <div class="draft-box" style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;">
+                <span style="font-size: 11px; color: #666; margin-bottom: 5px;"></span>
+                {{ if .alloy.ImageURL }}
+                    <img src="{{ .alloy.ImageURL }}" alt="Превью" style="width: 100%; height: 110px; object-fit: cover; border-radius: 4px;">
+                {{ else }}
+                    <div style="width: 100%; height: 90px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;">Нет фото</div>
+                {{ end }}
+            </div>
+
+        </div>
 
         <!-- Поля формы -->
         <input type="text" class="draft-input" placeholder="Название" value="{{ .alloy.Title }}">
