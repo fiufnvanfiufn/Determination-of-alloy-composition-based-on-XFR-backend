@@ -4,60 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Лента</title>
-    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css">
 </head>
 <body class="mobile-body feed-body">
     <div class="feed-container">
         <!-- Область артефакта -->
         <div class="feed-media-wrapper">
-            <video
-            src="{{ .alloy.VideoURL }}"
-            class="feed-media"
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="auto">
-            </video>
+            {{ if .alloy.VideoURL }}
+                <video src="{{ .alloy.VideoURL }}" class="feed-media" autoplay muted loop playsinline preload="auto"></video>
+            {{ else }}
+                <video src="/media/default.mp4" class="feed-media" autoplay muted loop playsinline preload="auto"></video>
+            {{ end }}
         </div>
 
         <!-- Нижняя строка: карточка слева и кнопки справа -->
         <div class="feed-bottom-row">
-<!-- Серая информационная карточка -->
-<!-- Серая информационная карточка -->
-        <div class="feed-info-card">
-            <div class="feed-title">{{ .alloy.Title }}</div>
+            <div class="feed-info-card">
+                <div class="feed-title">{{ .alloy.Name }}</div>
 
-            <!-- Частота, которая видна всегда, вне кнопки "еще" -->
-            <div class="feed-energy-tag">
-                Высшая частота: {{ .alloy.EnergyKev }} кэВ
-            </div>
-            <div class="feed-energy-tag">
-                Вторая высшая: {{ .alloy.IntensityCps }} кэВ
-            </div>
-
-            <!-- Раскрывающийся блок с описанием -->
-            <details class="feed-details">
-                <summary>еще</summary>
-                <div class="feed-details-content">
-                    <p class="feed-description">{{ .alloy.Description }}</p>
+                <div class="feed-energy-tag">
+                    Высший пик: {{ .alloy.EnergyKev }} кэВ
                 </div>
-            </details>
-        </div>
+                <div class="feed-energy-tag">
+                    Интенсивность: {{ .alloy.IntensityCps }} cps
+                </div>
 
-            <!-- Правая колонка действий -->
+                <details class="feed-details">
+                    <summary>еще</summary>
+                    <div class="feed-details-content">
+                        <p class="feed-description">{{ .alloy.Description }}</p>
+                    </div>
+                </details>
+            </div>
+
             <div class="feed-actions">
                 <div class="heart-block">
                     <div class="heart-circle">❤</div>
                     <span class="likes-count">{{ .alloy.LikesCount }}</span>
                 </div>
 
-                <a href="/feed?id={{ .alloy.ID }}&next=true" class="next-circle-btn">➔</a>
+<a href="/feed?alloy_id={{ .alloy.ID }}&next=true" class="next-circle-btn">➔</a>
             </div>
         </div>
     </div>
 
-    <!-- Нижняя панель навигации -->
     <div class="tab-bar">
         <a href="/feed" class="active-tab">Лента</a>
         <a href="/draft">Добавление</a>

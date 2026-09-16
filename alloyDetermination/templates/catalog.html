@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Каталог</title>
-    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css">
 </head>
 <body class="mobile-body">
-    <!-- Фильтрация слайдером (GET-запрос)[cite: 1] -->
+    <!-- Фильтрация слайдером (GET-запрос) -->
     <form action="/catalog" method="GET" class="filter-slider-container">
         <div class="slider-header">
             <span class="slider-title">Выбранная энергия:</span>
-            <!-- Показываем текущее выбранное число, отправленное на сервер -->
             <span class="slider-current-val">
-                {{ if .query }}{{ .query }} кэВ{{ else }}0 кэВ (Все){{ end }}
+                {{ if .energy }}{{ .energy }} кэВ{{ else }}0 кэВ (Все){{ end }}
             </span>
         </div>
 
@@ -24,11 +23,11 @@
             min="0"
             max="25"
             step="0.01"
-            value="{{ if .query }}{{ .query }}{{ else }}0{{ end }}"
+            value="{{ if .energy }}{{ .energy }}{{ else }}0{{ end }}"
             class="range-slider"
         >
 
-        <!-- Оставлена только кнопка применения фильтра -->
+        <!-- Только кнопка применения фильтра -->
         <div class="filter-actions">
             <button type="submit" class="filter-btn">Применить</button>
         </div>
@@ -38,17 +37,21 @@
     <div class="grid">
         {{ range .alloys }}
         <div class="card">
-            <a href="/feed?id={{ .Alloy.ID }}">
-                <img src="{{ .Alloy.ImageURL }}" alt="{{ .Alloy.Title }}">
+            <a href="/feed?alloy_id={{ .ID }}">
+                {{ if .ImgURL }}
+                    <img src="{{ .ImgURL }}" alt="{{ .Name }}">
+                {{ else }}
+                    <img src="/img/default.png" alt="{{ .Name }}">
+                {{ end }}
             </a>
 
-            <!-- Новый блок с названием и частотой -->
+            <!-- Блок с названием и частотой -->
             <div class="card-info">
-                <a href="/feed?id={{ .Alloy.ID }}" class="card-title">
-                    {{ .Alloy.Title }}
+                <a href="/feed?id={{ .ID }}" class="card-title">
+                    {{ .Name }}
                 </a>
                 <div class="card-energy">
-                    Частота: {{ .Alloy.EnergyKev }} кэВ
+                    Частота: {{ .EnergyKev }} кэВ
                 </div>
             </div>
 
@@ -56,6 +59,11 @@
                 <div class="card-heart">
                     {{ .LikesCount }} 🤍
                 </div>
+
+                <form action="/delete" method="POST">
+                    <input type="hidden" name="alloy_id" value="{{ .ID }}">
+                    <button type="submit" class="card-delete-btn" title="Удалить">✕</button>
+                </form>
             </div>
         </div>
         {{ end }}

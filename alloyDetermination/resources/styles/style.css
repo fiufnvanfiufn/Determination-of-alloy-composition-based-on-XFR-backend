@@ -478,3 +478,73 @@ textarea.draft-input {
     background-color: var(--hover-yellow);
     color: black;
 }
+
+.draft-media-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+/* Бокс одного превью */
+.draft-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+/* Маленькая серая подпись над превью (пустая в разметке) */
+.draft-box-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+/* Превью картинки */
+.draft-preview {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Превью видео */
+.draft-preview-video {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    background: #000;
+    border-radius: 4px;
+}
+
+/* Заглушка «Нет фото» / «Нет видео» */
+.draft-empty {
+    width: 100%;
+    height: 90px;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #888;
+}
+
+/* Поля ввода */
+.draft-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+}
+
+/* Дополнительный отступ сверху для поля «Название»
+   (в оригинале было margin-top: 12px) */
+.draft-input-spaced {
+    margin-top: 12px;
+}
+
+/* Кнопка на всю ширину */
+.filter-btn-wide {
+    width: 100%;
+    margin-top: 10px;
+}

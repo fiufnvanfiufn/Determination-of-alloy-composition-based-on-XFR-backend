@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"alloyDetermination/internal/app/repository"
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+
+	"alloyDetermination/internal/app/repository"
 )
 
 type Handler struct {
@@ -14,62 +12,37 @@ type Handler struct {
 }
 
 func NewHandler(r *repository.Repository) *Handler {
-	return &Handler{
-		Repository: r,
-	}
+	return &Handler{Repository: r}
 }
 
-// DTO (Data Transfer Object) для передачи длины массива лайков в шаблон
-type AlloyDTO struct {
-	repository.Alloy
-	LikesCount int
-}
+func (h *Handler) RegisterHandler(router *gin.Engine) {
+	// GET
+	router.GET("/catalog", h.GetCatalogAlloy)
+	router.GET("/feed", h.GetFeedAlloy)
+	router.GET("/draft", h.GetDraftAlloy)
 
-func (h *Handler) GetCatalog(ctx *gin.Context) {
-	energyQuery := ctx.Query("energy") // GET параметр фильтрации
+	// POST
+	router.POST("/draft", h.PostDraftAlloy)
+	router.POST("/publish", h.PostPublishAlloy)
+	router.POST("/delete", h.PostDeleteAlloy)
 
-	alloys, err := h.Repository.GetAlloysCatalog(energyQuery)
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	var dtos []AlloyDTO
-	for _, a := range alloys {
-		dtos = append(dtos, AlloyDTO{Alloy: a, LikesCount: len(a.Likes)})
-	}
-
-	ctx.HTML(http.StatusOK, "catalog.html", gin.H{
-		"alloys": dtos,
-		"query":  energyQuery, // Передаем обратно, чтобы сохранить в input
+	// редирект с корня на каталог — удобно
+	router.GET("/", func(ctx *gin.Context) {
+		ctx.Redirect(302, "/catalog")
 	})
 }
 
-func (h *Handler) GetDraft(ctx *gin.Context) {
-	draft, err := h.Repository.GetAlloyDraft()
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	ctx.HTML(http.StatusOK, "draft.html", gin.H{
-		"alloy": draft,
-	})
+func (h *Handler) RegisterStatic(router *gin.Engine) {
+	router.LoadHTMLGlob("templates/*")
+	router.Static("/styles", "./resources/styles")
+	router.Static("/img", "./resources/img")
+	router.Static("/media", "./resources/media")
 }
 
-func (h *Handler) GetFeed(ctx *gin.Context) {
-	idStr := ctx.Query("id")
-	nextStr := ctx.Query("next")
-
-	id, _ := strconv.Atoi(idStr)
-	next := nextStr == "true"
-
-	alloy, err := h.Repository.GetAlloyFeed(id, next)
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	dto := AlloyDTO{Alloy: alloy, LikesCount: len(alloy.Likes)}
-
-	ctx.HTML(http.StatusOK, "feed.html", gin.H{
-		"alloy": dto,
+func (h *Handler) errorHandler(ctx *gin.Context, code int, err error) {
+	logrus.Error(err.Error())
+	ctx.JSON(code, gin.H{
+		"alloy_status":      "error",
+		"alloy_description": err.Error(),
 	})
 }

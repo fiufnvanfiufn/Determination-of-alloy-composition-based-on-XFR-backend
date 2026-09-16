@@ -3,59 +3,34 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"alloyDetermination/internal/app/ds"
+
+	"gorm.io/gorm"
 )
 
-// Список опубликованных услуг (для плитки/каталога), с поиском по названию.
-// Чистый ORM.
-func (r *Repository) GetPublishedAlloys(search string) ([]ds.Alloy, error) {
+// 1) Все услуги (кроме удалённых), с фильтром по энергии
+func (r *Repository) GetAlloysCatalog(maxEnergy float64) ([]ds.Alloy, error) {
 	var alloys []ds.Alloy
-	q := r.db.Where("status = ?", "опубликован")
-	if search != "" {
-		q = q.Where("name ILIKE ?", "%"+search+"%")
+	q := r.db.Where("alloy_status = ?", "опубликован")
+
+	if maxEnergy > 0 {
+		q = q.Where("alloy_energy_kev <= ?", maxEnergy)
 	}
-	if err := q.Order("date_create DESC").Find(&alloys).Error; err != nil {
+	if err := q.Order("alloy_id").Find(&alloys).Error; err != nil {
 		return nil, err
 	}
 	return alloys, nil
 }
 
-// Один образец по ID — только не удалённый. Используем "курсор" (raw SQL + Row()).
-func (r *Repository) GetAlloyByID(id int) (*ds.Alloy, error) {
-	query := `
-		SELECT id, name, description, status, img_url, video_url,
-		       energy_kev, intensity_cps, date_create, date_formed, creator_id
-		FROM alloys
-		WHERE id = $1 AND status <> 'удален'`
-
-	row := r.db.Raw(query, id).Row()
-
-	a := &ds.Alloy{}
-	err := row.Scan(
-		&a.ID, &a.Name, &a.Description, &a.Status,
-		&a.ImgURL, &a.VideoURL,
-		&a.EnergyKev, &a.IntensityCps,
-		&a.DateCreate, &a.DateFormed, &a.CreatorID,
-	)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return a, nil
-}
-
-// Черновик конкретного пользователя (или nil, если нет).
-func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Alloy, error) {
+// 2) Одна услуга по ID (только не удалённая)
+func (r *Repository) GetAlloyByID(id uint) (*ds.Alloy, error) {
 	var a ds.Alloy
-	err := r.db.
-		Where("creator_id = ? AND status = ?", creatorID, "черновик").
-		First(&a).Error
+	err := r.db.Where("alloy_id = ? AND alloy_status <> ?", id, "удален").First(&a).Error
 	if err != nil {
-		if errors.Is(err, gormErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -63,13 +38,34 @@ func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Alloy, error) {
 	return &a, nil
 }
 
-// Создание черновика. Чистый ORM.
+// 3) Черновик пользователя
+func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Alloy, error) {
+	var a ds.Alloy
+	err := r.db.Where("creator_id = ? AND alloy_status = ?", creatorID, "черновик").First(&a).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &a, nil
+}
+
+// 4) Создать черновик (или вернуть существующий)
 func (r *Repository) CreateDraft(creatorID uint, name, imgURL, videoURL string) (*ds.Alloy, error) {
+	existing, err := r.GetDraftByCreator(creatorID)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		return existing, nil
+	}
+
 	a := &ds.Alloy{
 		Name:       name,
+		Status:     "черновик",
 		ImgURL:     imgURL,
 		VideoURL:   videoURL,
-		Status:     "черновик",
 		DateCreate: time.Now(),
 		CreatorID:  creatorID,
 	}
@@ -79,23 +75,67 @@ func (r *Repository) CreateDraft(creatorID uint, name, imgURL, videoURL string) 
 	return a, nil
 }
 
-// Публикация: заполняем описание и два "предметных" поля, меняем статус.
-// Чистый ORM.
-func (r *Repository) PublishDraft(id uint, description string, energyKev, intensityCps float64) error {
-	return r.db.Model(&ds.Alloy{}).
-		Where("id = ? AND status = ?", id, "черновик").
-		Updates(map[string]interface{}{
-			"description":   description,
-			"energy_kev":    energyKev,
-			"intensity_cps": intensityCps,
-			"status":        "опубликован",
-			"date_formed":   time.Now(),
-		}).Error
+// 5) Опубликовать
+func (r *Repository) PublishAlloy(id uint, description string, energyKev, intensityCps float64) error {
+	updates := map[string]interface{}{
+		"alloy_description":   description,
+		"alloy_energy_kev":    energyKev,
+		"alloy_intensity_cps": intensityCps,
+		"alloy_status":        "опубликован",
+		"alloy_formed_at":     sql.NullTime{Time: time.Now(), Valid: true},
+	}
+	res := r.db.Model(&ds.Alloy{}).Where("alloy_id = ?", id).Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("alloy %d not found", id)
+	}
+	return nil
 }
 
-// Логическое удаление — БЕЗ ORM, через raw SQL ("курсор").
-func (r *Repository) SoftDeleteAlloy(id uint) error {
-	row := r.db.Raw(`UPDATE alloys SET status = 'удален' WHERE id = $1`, id).Row()
-	defer row.Close()
+// 6) Логическое удаление через SQL UPDATE без ORM
+func (r *Repository) DeleteAlloySQL(id uint) error {
+	query := "UPDATE alloys SET alloy_status = $1 WHERE alloy_id = $2"
+	row := r.db.Raw(query, "удален", id).Row()
+
+	var dummy string
+	if err := row.Scan(&dummy); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("delete alloy error: %w", err)
+	}
 	return nil
+}
+
+// 7) Feed
+func (r *Repository) GetAlloyFeed(id uint, next bool) (*ds.Alloy, error) {
+	var a ds.Alloy
+	q := r.db.Where("alloy_status = ?", "опубликован")
+
+	if id == 0 {
+		if err := q.Order("alloy_id").First(&a).Error; err != nil {
+			return nil, err
+		}
+		return &a, nil
+	}
+
+	op := "<"
+	order := "alloy_id DESC"
+	if next {
+		op = ">"
+		order = "alloy_id ASC"
+	}
+	err := q.Where("alloy_id "+op+" ?", id).Order(order).First(&a).Error
+	if err != nil {
+		var fallback ds.Alloy
+		ord := "alloy_id ASC"
+		if !next {
+			ord = "alloy_id DESC"
+		}
+		if err := r.db.Where("alloy_status = ?", "опубликован").
+			Order(ord).First(&fallback).Error; err != nil {
+			return nil, err
+		}
+		return &fallback, nil
+	}
+	return &a, nil
 }

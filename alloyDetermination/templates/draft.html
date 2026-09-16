@@ -4,44 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавление</title>
-    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="stylesheet" href="/styles/style.css">
 </head>
 <body class="mobile-body draft-body">
     <div class="draft-container">
-        <!-- Блоки медиа -->
-<!-- Блоки медиа (Отдельно от текста по заданию) -->
-        <div style="display: flex; gap: 12px; margin-bottom: 5px;">
 
-            <!-- Превью Видео -->
-            <div class="draft-box" style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;">
-                <span style="font-size: 11px; color: #666; margin-bottom: 5px;"></span>
-                {{ if .alloy.VideoURL }}
-                    <video src="{{ .alloy.VideoURL }}" style="width: 100%; height: 110px; object-fit: cover; background: #000; border-radius: 4px;" controls muted></video>
-                {{ else }}
-                    <div style="width: 100%; height: 90px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;">Нет видео</div>
-                {{ end }}
+        {{ if .alloy }}
+        {{/* === Есть черновик: публикация === */}}
+        <form action="/publish" method="POST">
+            <input type="hidden" name="id" value="{{ .alloy.ID }}">
+
+            <!-- Блоки медиа -->
+            <div class="draft-media-row">
+
+                <div class="draft-box">
+                    <span class="draft-box-label"></span>
+                    {{ if .alloy.VideoURL }}
+                        <video src="{{ .alloy.VideoURL }}" class="draft-preview-video" controls muted></video>
+                    {{ else }}
+                        <video src="/media/default.mp4" class="draft-preview-video" controls muted></video>
+                    {{ end }}
+                </div>
+
+                <div class="draft-box">
+                    <span class="draft-box-label"></span>
+                    {{ if .alloy.ImgURL }}
+                        <img src="{{ .alloy.ImgURL }}" alt="Превью" class="draft-preview">
+                    {{ else }}
+                        <img src="/img/default.png" alt="Превью" class="draft-preview">
+                    {{ end }}
+                </div>
+
             </div>
 
-            <!-- Превью Фото -->
-            <div class="draft-box" style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px;">
-                <span style="font-size: 11px; color: #666; margin-bottom: 5px;"></span>
-                {{ if .alloy.ImageURL }}
-                    <img src="{{ .alloy.ImageURL }}" alt="Превью" style="width: 100%; height: 110px; object-fit: cover; border-radius: 4px;">
-                {{ else }}
-                    <div style="width: 100%; height: 90px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #888;">Нет фото</div>
-                {{ end }}
+            <!-- Поля формы -->
+            <input type="text" class="draft-input draft-input-spaced" placeholder="Название"
+                   value="{{ .alloy.Name }}" disabled>
+
+            <input type="text" name="energy_kev" class="draft-input draft-input-spaced"
+                   placeholder="Первая высшая частота"
+                   value="{{ .alloy.EnergyKev }}">
+
+            <input type="text" name="intensity_cps" class="draft-input draft-input-spaced"
+                   placeholder="Вторая высшая частота"
+                   value="{{ .alloy.IntensityCps }}">
+
+            <textarea name="description" class="draft-input draft-input-spaced"
+                      placeholder="Описание сплава" rows="3">{{ .alloy.Description }}</textarea>
+
+            <button type="submit" class="filter-btn filter-btn-wide">Опубликовать</button>
+        </form>
+
+        {{ else }}
+        {{/* === Черновика нет: создание === */}}
+        <form action="/draft" method="POST">
+
+            <!-- Блоки медиа (пустые превью с заглушками) -->
+            <div class="draft-media-row">
+
+                <div class="draft-box">
+                    <span class="draft-box-label"></span>
+                    <div class="draft-empty">Нет видео</div>
+                </div>
+
+                <div class="draft-box">
+                    <span class="draft-box-label"></span>
+                    <div class="draft-empty">Нет фото</div>
+                </div>
+
             </div>
 
-        </div>
+            <!-- Поля формы -->
+            <input type="text" name="name" class="draft-input" placeholder="Название" required>
+            <input type="text" name="img_url" class="draft-input" placeholder="URL изображения (необязательно)">
+            <input type="text" name="video_url" class="draft-input" placeholder="URL видео (необязательно)">
 
+            <button type="submit" class="filter-btn filter-btn-wide">Далее</button>
+        </form>
+        {{ end }}
 
-        <!-- Поля формы -->
-        <input type="text" class="draft-input" placeholder="Название" value="{{ .alloy.Title }}">
-        <input type="text" class="draft-input" placeholder="Первая высшая частота" value="{{ .alloy.EnergyKev }}">
-        <input type="text" class="draft-input" placeholder="Вторая высшая частота" value="{{ .alloy.IntensityCps }}">
-
-        <!-- ВРЕМЕННАЯ ЗАГЛУШКА: проверяем, не ломал ли сервер страницу на этом месте -->
-        <textarea class="draft-input" placeholder="Описание сплава" rows="3">Описание</textarea>
     </div>
 
     <!-- Нижняя панель навигации -->
