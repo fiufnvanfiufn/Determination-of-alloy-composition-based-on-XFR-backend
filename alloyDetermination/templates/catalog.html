@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/styles/style.css">
 </head>
 <body class="mobile-body">
-    <!-- Фильтрация слайдером (GET-запрос) -->
     <form action="/catalog" method="GET" class="filter-slider-container">
         <div class="slider-header">
             <span class="slider-title">Выбранная энергия:</span>
@@ -16,7 +15,6 @@
             </span>
         </div>
 
-        <!-- Ползунок без нижней разметки -->
         <input
             type="range"
             name="energy"
@@ -27,13 +25,11 @@
             class="range-slider"
         >
 
-        <!-- Только кнопка применения фильтра -->
         <div class="filter-actions">
             <button type="submit" class="filter-btn">Применить</button>
         </div>
     </form>
 
-    <!-- Плитка карточек в 2 столбца -->
     <div class="grid">
         {{ range .alloys }}
         <div class="card">
@@ -45,7 +41,6 @@
                 {{ end }}
             </a>
 
-            <!-- Блок с названием и частотой -->
             <div class="card-info">
                 <a href="/feed?id={{ .ID }}" class="card-title">
                     {{ .Name }}

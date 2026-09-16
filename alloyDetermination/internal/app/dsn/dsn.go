@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-// FromEnv собирает DSN для подключения к Postgres из переменных окружения
 func FromEnv() string {
 	host := os.Getenv("DB_HOST")
 	if host == "" {

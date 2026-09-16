@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// 1) Все услуги (кроме удалённых), с фильтром по энергии
 func (r *Repository) GetAlloysCatalog(maxEnergy float64) ([]ds.Alloy, error) {
 	var alloys []ds.Alloy
 	q := r.db.Where("alloy_status = ?", "опубликован")
@@ -25,7 +24,6 @@ func (r *Repository) GetAlloysCatalog(maxEnergy float64) ([]ds.Alloy, error) {
 	return alloys, nil
 }
 
-// 2) Одна услуга по ID (только не удалённая)
 func (r *Repository) GetAlloyByID(id uint) (*ds.Alloy, error) {
 	var a ds.Alloy
 	err := r.db.Where("alloy_id = ? AND alloy_status <> ?", id, "удален").First(&a).Error
@@ -38,7 +36,6 @@ func (r *Repository) GetAlloyByID(id uint) (*ds.Alloy, error) {
 	return &a, nil
 }
 
-// 3) Черновик пользователя
 func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Alloy, error) {
 	var a ds.Alloy
 	err := r.db.Where("creator_id = ? AND alloy_status = ?", creatorID, "черновик").First(&a).Error
@@ -51,7 +48,6 @@ func (r *Repository) GetDraftByCreator(creatorID uint) (*ds.Alloy, error) {
 	return &a, nil
 }
 
-// 4) Создать черновик (или вернуть существующий)
 func (r *Repository) CreateDraft(creatorID uint, name, imgURL, videoURL string) (*ds.Alloy, error) {
 	existing, err := r.GetDraftByCreator(creatorID)
 	if err != nil {
@@ -75,7 +71,6 @@ func (r *Repository) CreateDraft(creatorID uint, name, imgURL, videoURL string) 
 	return a, nil
 }
 
-// 5) Опубликовать
 func (r *Repository) PublishAlloy(id uint, description string, energyKev, intensityCps float64) error {
 	updates := map[string]interface{}{
 		"alloy_description":   description,
@@ -94,7 +89,6 @@ func (r *Repository) PublishAlloy(id uint, description string, energyKev, intens
 	return nil
 }
 
-// 6) Логическое удаление через SQL UPDATE без ORM
 func (r *Repository) DeleteAlloySQL(id uint) error {
 	query := "UPDATE alloys SET alloy_status = $1 WHERE alloy_id = $2"
 	row := r.db.Raw(query, "удален", id).Row()
@@ -106,7 +100,6 @@ func (r *Repository) DeleteAlloySQL(id uint) error {
 	return nil
 }
 
-// 7) Feed
 func (r *Repository) GetAlloyFeed(id uint, next bool) (*ds.Alloy, error) {
 	var a ds.Alloy
 	q := r.db.Where("alloy_status = ?", "опубликован")

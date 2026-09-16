@@ -8,7 +8,6 @@
 </head>
 <body class="mobile-body feed-body">
     <div class="feed-container">
-        <!-- Область артефакта -->
         <div class="feed-media-wrapper">
             {{ if .alloy.VideoURL }}
                 <video src="{{ .alloy.VideoURL }}" class="feed-media" autoplay muted loop playsinline preload="auto"></video>
@@ -17,7 +16,6 @@
             {{ end }}
         </div>
 
-        <!-- Нижняя строка: карточка слева и кнопки справа -->
         <div class="feed-bottom-row">
             <div class="feed-info-card">
                 <div class="feed-title">{{ .alloy.Name }}</div>

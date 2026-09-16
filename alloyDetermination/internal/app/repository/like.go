@@ -4,14 +4,12 @@ import (
 	"alloyDetermination/internal/app/ds"
 )
 
-// Количество лайков у одной услуги.
 func (r *Repository) GetLikesCount(alloyID uint) (int64, error) {
 	var count int64
 	err := r.db.Model(&ds.Like{}).Where("alloy_id = ?", alloyID).Count(&count).Error
 	return count, err
 }
 
-// Количество лайков сразу для набора услуг (для каталога).
 func (r *Repository) GetLikesCountsForAlloys(ids []uint) (map[uint]int64, error) {
 	result := make(map[uint]int64, len(ids))
 	if len(ids) == 0 {

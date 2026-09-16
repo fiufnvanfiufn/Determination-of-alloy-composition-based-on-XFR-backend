@@ -16,17 +16,14 @@ func NewHandler(r *repository.Repository) *Handler {
 }
 
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// GET
 	router.GET("/catalog", h.GetCatalogAlloy)
 	router.GET("/feed", h.GetFeedAlloy)
 	router.GET("/draft", h.GetDraftAlloy)
 
-	// POST
 	router.POST("/draft", h.PostDraftAlloy)
 	router.POST("/publish", h.PostPublishAlloy)
 	router.POST("/delete", h.PostDeleteAlloy)
 
-	// редирект с корня на каталог — удобно
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.Redirect(302, "/catalog")
 	})

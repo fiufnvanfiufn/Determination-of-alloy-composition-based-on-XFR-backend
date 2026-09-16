@@ -14,7 +14,6 @@
         <form action="/publish" method="POST">
             <input type="hidden" name="id" value="{{ .alloy.ID }}">
 
-            <!-- Блоки медиа -->
             <div class="draft-media-row">
 
                 <div class="draft-box">
@@ -37,7 +36,6 @@
 
             </div>
 
-            <!-- Поля формы -->
             <input type="text" class="draft-input draft-input-spaced" placeholder="Название"
                    value="{{ .alloy.Name }}" disabled>
 
@@ -59,7 +57,6 @@
         {{/* === Черновика нет: создание === */}}
         <form action="/draft" method="POST">
 
-            <!-- Блоки медиа (пустые превью с заглушками) -->
             <div class="draft-media-row">
 
                 <div class="draft-box">
@@ -74,7 +71,6 @@
 
             </div>
 
-            <!-- Поля формы -->
             <input type="text" name="name" class="draft-input" placeholder="Название" required>
             <input type="text" name="img_url" class="draft-input" placeholder="URL изображения (необязательно)">
             <input type="text" name="video_url" class="draft-input" placeholder="URL видео (необязательно)">
@@ -85,7 +81,6 @@
 
     </div>
 
-    <!-- Нижняя панель навигации -->
     <div class="tab-bar">
         <a href="/feed">Лента</a>
         <a href="/draft" class="active-tab">Добавление</a>
