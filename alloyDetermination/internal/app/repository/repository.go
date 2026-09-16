@@ -83,7 +83,7 @@ func NewRepository() (*Repository, error) {
 			ID:           6,
 			Title:        "Пьютер",
 			Description:  "Сплав на основе олова с добавлением меди и сурьмы. Свинец отсутствует, что типично для качественной кухонной утвари.",
-			EnergyKev:    25.27, // Эталонный пик олова
+			EnergyKev:    25, // Эталонный пик олова
 			IntensityCps: 20.94,
 			Status:       "published",
 			ImageURL:     "http://localhost:9000/media/пьютер.webp",
