@@ -80,18 +80,6 @@ body.feed-body {
     gap: 12px;
 }
 
-/* Нижняя строка */
-.feed-bottom-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 8px;
-}
-
 /* Карточка: всегда широкая, но с запасом под кнопки */
 .feed-info-card {
     flex: 1 1 auto;
@@ -110,7 +98,8 @@ body.feed-body {
     color: #1a1a1a;
     line-height: 1.2;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -135,7 +124,7 @@ body.feed-body {
 /* Вывод частоты в ленте всегда на виду */
 .feed-energy-tag {
     font-size: 12px;
-    color: var(--brand-red);
+    color: #ffffff;
     font-weight: bold;
     margin-top: 4px;
 }
@@ -504,7 +493,7 @@ textarea.draft-input {
 /* Превью картинки */
 .draft-preview {
     width: 100%;
-    height: 110px;
+    height: 180px;
     object-fit: cover;
     border-radius: 4px;
 }
@@ -512,22 +501,10 @@ textarea.draft-input {
 /* Превью видео */
 .draft-preview-video {
     width: 100%;
-    height: 110px;
+    height: 180px;
     object-fit: cover;
     background: #000;
     border-radius: 4px;
-}
-
-/* Заглушка «Нет фото» / «Нет видео» */
-.draft-empty {
-    width: 100%;
-    height: 90px;
-    background: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: #888;
 }
 
 /* Поля ввода */
@@ -544,7 +521,99 @@ textarea.draft-input {
 }
 
 /* Кнопка на всю ширину */
-.filter-btn-wide {
-    width: 100%;
-    margin-top: 10px;
+.filter-btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.filter-btn-small {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-top: 0;
+}
+
+/* Короткое описание — под названием, чёрный текст */
+.feed-short-desc {
+    font-size: 13px;
+    color: #000;
+    margin-top: 4px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow: hidden;
+}
+
+/* Если в карточке открыт details — короткое прячем */
+.feed-info-card:has(.feed-details[open]) .feed-short-desc {
+    display: none;
+}
+
+/* Раскрывающийся блок «Еще / Свернуть» */
+.feed-details {
+    margin-top: 6px;
+}
+
+.feed-details summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: #4ea1ff;
+    user-select: none;
+    list-style: none;
+}
+
+.feed-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.feed-details summary:hover {
+    text-decoration: underline;
+}
+
+.feed-details summary::before {
+    content: "▸ ";
+}
+
+.feed-details[open] summary::before {
+    content: "▾ ";
+}
+
+/* Полное описание — видно, когда details открыт */
+.feed-full-desc {
+    font-size: 13px;
+    color: #000;
+    line-height: 1.4;
+    margin-top: 6px;
+}
+
+/* Переключение текста «Еще» / «Свернуть» */
+.details-close {
+    display: none;
+}
+
+details[open] .details-open {
+    display: none;
+}
+
+details[open] .details-close {
+    display: inline;
+}
+
+/* Параметры в правой колонке */
+.feed-params {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
 }

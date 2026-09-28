@@ -21,7 +21,9 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	logrus.Infof("GetCatalog RAW QUERY: %q", ctx.Request.URL.RawQuery)
 	energyStr := ctx.Query("energy")
 	var energy float64
-	if energyStr != "" {
+	if energyStr == "" {
+		energy = 25.0
+	} else {
 		energy, _ = strconv.ParseFloat(energyStr, 64)
 	}
 	alloys, err := h.Repository.GetAlloysCatalog(energy)

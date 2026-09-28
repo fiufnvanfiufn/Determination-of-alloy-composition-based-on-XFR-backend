@@ -15,9 +15,8 @@ func (r *Repository) GetAlloysCatalog(maxEnergy float64) ([]ds.Alloy, error) {
 	var alloys []ds.Alloy
 	q := r.db.Where("alloy_status = ?", "опубликован")
 
-	if maxEnergy > 0 {
-		q = q.Where("alloy_energy_kev <= ?", maxEnergy)
-	}
+	q = q.Where("alloy_energy_kev <= ?", maxEnergy) // ← без if
+
 	if err := q.Order("alloy_id").Find(&alloys).Error; err != nil {
 		return nil, err
 	}

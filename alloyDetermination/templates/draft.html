@@ -54,30 +54,29 @@
         </form>
 
         {{ else }}
-        {{/* === Черновика нет: создание === */}}
-        <form action="/draft" method="POST">
+            {{/* === Черновика нет: создание. Показываем заглушки как превью === */}}
+            <form action="/draft_alloy" method="POST">
 
-            <div class="draft-media-row">
-
-                <div class="draft-box">
-                    <span class="draft-box-label"></span>
-                    <div class="draft-empty">Нет видео</div>
+                <!-- Медиа сверху: друг под другом -->
+                <div class="draft-media-column">
+                    <video src="/media/default.mp4" class="draft-preview-video" controls muted></video>
+                    <img src="/img/default.png" alt="Превью" class="draft-preview">
                 </div>
 
-                <div class="draft-box">
-                    <span class="draft-box-label"></span>
-                    <div class="draft-empty">Нет фото</div>
-                </div>
+                <input type="text" name="name" class="draft-input" placeholder="Название" required>
 
-            </div>
+                <!-- Кнопки-заглушки выбора файлов (файлы не отправляются на сервер) -->
+                <button type="button" class="filter-btn filter-btn-wide draft-choose-btn">
+                    Выбрать изображение
+                </button>
 
-            <input type="text" name="name" class="draft-input" placeholder="Название" required>
-            <input type="text" name="img_url" class="draft-input" placeholder="URL изображения (необязательно)">
-            <input type="text" name="video_url" class="draft-input" placeholder="URL видео (необязательно)">
+                <button type="button" class="filter-btn filter-btn-wide draft-choose-btn">
+                    Выбрать видео
+                </button>
 
-            <button type="submit" class="filter-btn filter-btn-wide">Далее</button>
-        </form>
-        {{ end }}
+                <button type="submit" class="filter-btn filter-btn-wide">Далее</button>
+            </form>
+            {{ end }}
 
     </div>
 

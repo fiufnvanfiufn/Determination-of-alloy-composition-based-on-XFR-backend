@@ -8,6 +8,7 @@
 </head>
 <body class="mobile-body feed-body">
     <div class="feed-container">
+
         <div class="feed-media-wrapper">
             {{ if .alloy.VideoURL }}
                 <video src="{{ .alloy.VideoURL }}" class="feed-media" autoplay muted loop playsinline preload="auto"></video>
@@ -17,32 +18,38 @@
         </div>
 
         <div class="feed-bottom-row">
+
+            <!-- ЛЕВАЯ карточка: название + короткое + Еще -->
             <div class="feed-info-card">
                 <div class="feed-title">{{ .alloy.Name }}</div>
 
-                <div class="feed-energy-tag">
-                    Высший пик: {{ .alloy.EnergyKev }} кэВ
-                </div>
-                <div class="feed-energy-tag">
-                    Интенсивность: {{ .alloy.IntensityCps }} cps
-                </div>
+                <!-- короткое описание — видно, пока не раскрыто полное -->
+                <p class="feed-short-desc">{{ .alloy.Description }}</p>
 
+                <!-- полное описание — по клику -->
                 <details class="feed-details">
-                    <summary>еще</summary>
-                    <div class="feed-details-content">
-                        <p class="feed-description">{{ .alloy.Description }}</p>
-                    </div>
+                    <summary>
+                        <span class="details-open">Еще</span>
+                        <span class="details-close">Свернуть</span>
+                    </summary>
+                    <p class="feed-full-desc">{{ .alloy.Description }}</p>
                 </details>
             </div>
 
             <div class="feed-actions">
+                <div class="feed-params">
+                    <div class="feed-energy-tag">{{ .alloy.EnergyKev }}кэВ</div>
+                    <div class="feed-energy-tag">{{ .alloy.IntensityCps }}кэВ</div>
+                </div>
+
                 <div class="heart-block">
                     <div class="heart-circle">❤</div>
                     <span class="likes-count">{{ .alloy.LikesCount }}</span>
                 </div>
 
-<a href="/feed?alloy_id={{ .alloy.ID }}&next=true" class="next-circle-btn">➔</a>
+                <a href="/feed?alloy_id={{ .alloy.ID }}&next=true" class="next-circle-btn">➔</a>
             </div>
+
         </div>
     </div>
 

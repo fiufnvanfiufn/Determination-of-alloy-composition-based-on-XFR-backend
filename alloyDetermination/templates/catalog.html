@@ -9,9 +9,9 @@
 <body class="mobile-body">
     <form action="/catalog" method="GET" class="filter-slider-container">
         <div class="slider-header">
-            <span class="slider-title">Выбранная энергия:</span>
+            <span class="slider-title">Выбранная частота:</span>
             <span class="slider-current-val">
-                {{ if .energy }}{{ .energy }} кэВ{{ else }}0 кэВ (Все){{ end }}
+                {{ if .energy }}{{ .energy }} кэВ{{ else }}0 кэВ{{ end }}
             </span>
         </div>
 
@@ -57,7 +57,7 @@
 
                 <form action="/delete" method="POST">
                     <input type="hidden" name="alloy_id" value="{{ .ID }}">
-                    <button type="submit" class="card-delete-btn" title="Удалить">✕</button>
+                    <button type="submit" class="filter-btn filter-btn-small" title="Удалить">✕</button>
                 </form>
             </div>
         </div>
