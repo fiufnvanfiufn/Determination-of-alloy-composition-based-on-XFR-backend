@@ -2,6 +2,8 @@ package repository
 
 import (
 	"alloyDetermination/internal/app/ds"
+
+	"gorm.io/gorm/clause"
 )
 
 func (r *Repository) GetLikesCount(alloyID uint) (int64, error) {
@@ -33,4 +35,12 @@ func (r *Repository) GetLikesCountsForAlloys(ids []uint) (map[uint]int64, error)
 		result[x.AlloyID] = x.Cnt
 	}
 	return result, nil
+}
+
+func (r *Repository) SetLike(userID, alloyID uint, like bool) error {
+	if like {
+		l := ds.Like{UserID: userID, AlloyID: alloyID}
+		return r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&l).Error
+	}
+	return r.db.Where("user_id = ? AND alloy_id = ?", userID, alloyID).Delete(&ds.Like{}).Error
 }

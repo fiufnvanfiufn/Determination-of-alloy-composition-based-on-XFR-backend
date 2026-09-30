@@ -16,17 +16,27 @@ func NewHandler(r *repository.Repository) *Handler {
 }
 
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	router.GET("/catalog", h.GetCatalogAlloy)
-	router.GET("/feed", h.GetFeedAlloy)
-	router.GET("/draft", h.GetDraftAlloy)
+	api := router.Group("/api")
 
-	router.POST("/draft", h.PostDraftAlloy)
-	router.POST("/publish", h.PostPublishAlloy)
-	router.POST("/delete", h.PostDeleteAlloy)
+	// Каталог и лента
+	api.GET("/alloyCatalog", h.GetCatalogAlloy)
+	api.GET("/alloyFeed", h.GetFeedAlloy)
 
-	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(302, "/catalog")
-	})
+	// Черновик
+	api.GET("/alloyDraft", h.GetDraftAlloy)
+	api.POST("/alloyDraft", h.PostDraftAlloy) // ← убрать router., поставить api.
+
+	// Публикация
+	api.PUT("/alloyPublish", h.PutPublishAlloy) // ← тоже
+
+	// Удаление и лайк
+	api.DELETE("/alloyDelete/:id", h.DeleteAlloy)
+	api.POST("/alloyLike", h.PostLikeAlloy)
+
+	// Пользователь
+	api.POST("/userRegister", h.PostRegisterUser)
+	api.POST("/userLogin", h.PostLoginUser)
+	api.POST("/userLogout", h.PostLogoutUser)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
@@ -39,7 +49,7 @@ func (h *Handler) RegisterStatic(router *gin.Engine) {
 func (h *Handler) errorHandler(ctx *gin.Context, code int, err error) {
 	logrus.Error(err.Error())
 	ctx.JSON(code, gin.H{
-		"alloy_status":      "error",
-		"alloy_description": err.Error(),
+		"status":      "error",
+		"description": err.Error(),
 	})
 }

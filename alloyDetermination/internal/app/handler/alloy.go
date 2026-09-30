@@ -1,11 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"alloyDetermination/internal/app/ds"
 )
@@ -18,7 +18,6 @@ type AlloyDTO struct {
 }
 
 func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
-	logrus.Infof("GetCatalog RAW QUERY: %q", ctx.Request.URL.RawQuery)
 	energyStr := ctx.Query("energy")
 	var energy float64
 	if energyStr == "" {
@@ -26,27 +25,31 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	} else {
 		energy, _ = strconv.ParseFloat(energyStr, 64)
 	}
+
 	alloys, err := h.Repository.GetAlloysCatalog(energy)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-	ids := make([]uint, 0, len(alloys))
+
+	user := h.GetCurrentUser()
+
+	type AlloyResponse struct {
+		ds.Alloy
+		IsMine bool `json:"is_mine"`
+	}
+
+	result := make([]AlloyResponse, 0, len(alloys))
 	for _, a := range alloys {
-		ids = append(ids, a.ID)
+		result = append(result, AlloyResponse{
+			Alloy:  a,
+			IsMine: a.CreatorID == user.ID,
+		})
 	}
-	likesMap, err := h.Repository.GetLikesCountsForAlloys(ids)
-	if err != nil {
-		logrus.Error(err)
-		likesMap = map[uint]int64{}
-	}
-	dtos := make([]AlloyDTO, 0, len(alloys))
-	for _, a := range alloys {
-		dtos = append(dtos, AlloyDTO{Alloy: a, LikesCount: likesMap[a.ID]})
-	}
-	ctx.HTML(http.StatusOK, "catalog.html", gin.H{
-		"alloys": dtos,
-		"energy": energy,
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   result,
 	})
 }
 
@@ -61,68 +64,187 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusNotFound, err)
 		return
 	}
+
 	likes, _ := h.Repository.GetLikesCount(alloy.ID)
 
-	ctx.HTML(http.StatusOK, "feed.html", gin.H{
-		"alloy": AlloyDTO{Alloy: *alloy, LikesCount: likes},
+	user := h.GetCurrentUser()
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"alloy":   alloy,
+			"likes":   likes,
+			"is_mine": alloy.CreatorID == user.ID,
+		},
 	})
 }
 
 func (h *Handler) GetDraftAlloy(ctx *gin.Context) {
-	draft, err := h.Repository.GetDraftByCreator(currentUserID)
+	user := h.GetCurrentUser()
+
+	draft, err := h.Repository.GetDraftByCreator(user.ID)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-	ctx.HTML(http.StatusOK, "draft.html", gin.H{
-		"alloy": draft,
+
+	if draft == nil {
+		ctx.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"data":   nil,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   draft,
 	})
 }
 
 func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
-	if existing, _ := h.Repository.GetDraftByCreator(currentUserID); existing != nil {
-		ctx.Redirect(http.StatusFound, "/draft")
+	user := h.GetCurrentUser()
+
+	// Проверяем, нет ли уже черновика
+	if existing, _ := h.Repository.GetDraftByCreator(user.ID); existing != nil {
+		ctx.JSON(http.StatusConflict, gin.H{
+			"status":  "error",
+			"message": "draft already exists",
+		})
 		return
 	}
 
+	// Читаем форму
 	name := ctx.PostForm("name")
-	imgURL := ctx.PostForm("img_url")
-	videoURL := ctx.PostForm("video_url")
+	if name == "" {
+		h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("name is required"))
+		return
+	}
 
-	if _, err := h.Repository.CreateDraft(currentUserID, name, imgURL, videoURL); err != nil {
+	// Создаём черновик
+	draft, err := h.Repository.CreateDraft(user.ID, name, "", "")
+	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-	ctx.Redirect(http.StatusFound, "/draft")
+
+	imgName, videoName := "", ""
+
+	// Картинка
+	if file, err := ctx.FormFile("image"); err == nil {
+		imgName = fmt.Sprintf("alloy_%d_image.png", draft.ID)
+		if err := h.Repository.UploadFile(file, imgName); err != nil {
+			h.errorHandler(ctx, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	// Видео
+	if file, err := ctx.FormFile("video"); err == nil {
+		videoName = fmt.Sprintf("alloy_%d_video.mp4", draft.ID)
+		if err := h.Repository.UploadFile(file, videoName); err != nil {
+			h.errorHandler(ctx, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	// Сохраняем имена файлов в БД
+	if imgName != "" || videoName != "" {
+		_ = h.Repository.UpdateAlloyFiles(draft.ID, imgName, videoName)
+	}
+
+	// Перечитываем с обновлёнными полями
+	draft, _ = h.Repository.GetAlloyByID(draft.ID)
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"status": "success",
+		"data":   draft,
+	})
+}
+func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
+	var req struct {
+		AlloyID      uint    `json:"alloy_id" binding:"required"`
+		Description  string  `json:"description"`
+		EnergyKev    float64 `json:"energy_kev"`
+		IntensityCps float64 `json:"intensity_cps"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		h.errorHandler(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	// Проверяем, что это черновик текущего пользователя
+	user := h.GetCurrentUser()
+	draft, err := h.Repository.GetDraftByCreator(user.ID)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
+	}
+	if draft == nil || draft.ID != req.AlloyID {
+		ctx.JSON(http.StatusForbidden, gin.H{
+			"status":  "error",
+			"message": "not your draft",
+		})
+		return
+	}
+
+	if err := h.Repository.PublishAlloy(req.AlloyID, req.Description, req.EnergyKev, req.IntensityCps); err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "alloy published",
+	})
 }
 
-func (h *Handler) PostPublishAlloy(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.PostForm("id"))
+func (h *Handler) DeleteAlloy(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	description := ctx.PostForm("description")
-	energyKev, _ := strconv.ParseFloat(ctx.PostForm("energy_kev"), 64)
-	intensityCps, _ := strconv.ParseFloat(ctx.PostForm("intensity_cps"), 64)
+	user := h.GetCurrentUser()
 
-	if err := h.Repository.PublishAlloy(uint(id), description, energyKev, intensityCps); err != nil {
+	if err := h.Repository.SoftDeleteAlloy(uint(id), user.ID); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-	ctx.Redirect(http.StatusFound, "/catalog")
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "alloy deleted",
+	})
 }
 
-func (h *Handler) PostDeleteAlloy(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.PostForm("alloy_id"))
-	if err != nil {
+func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
+	var req struct {
+		AlloyID uint `json:"alloy_id" binding:"required"`
+		Like    int  `json:"like"` // 0 или 1
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.DeleteAlloySQL(uint(id)); err != nil {
+
+	user := h.GetCurrentUser()
+
+	if err := h.Repository.SetLike(user.ID, req.AlloyID, req.Like == 1); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-	ctx.Redirect(http.StatusFound, "/catalog")
+
+	likes, _ := h.Repository.GetLikesCount(req.AlloyID)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"alloy_id":    req.AlloyID,
+			"likes_count": likes,
+		},
+	})
 }

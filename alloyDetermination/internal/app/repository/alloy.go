@@ -9,6 +9,12 @@ import (
 	"alloyDetermination/internal/app/ds"
 
 	"gorm.io/gorm"
+
+	"context"
+	"mime/multipart"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/sirupsen/logrus"
 )
 
 func (r *Repository) GetAlloysCatalog(maxEnergy float64) ([]ds.Alloy, error) {
@@ -130,4 +136,44 @@ func (r *Repository) GetAlloyFeed(id uint, next bool) (*ds.Alloy, error) {
 		return &fallback, nil
 	}
 	return &a, nil
+}
+
+func (r *Repository) UploadFile(file *multipart.FileHeader, name string) error {
+	logrus.Infof("UploadFile START: %s (%d bytes)", name, file.Size)
+	start := time.Now()
+
+	f, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = r.minio.PutObject(context.Background(), r.bucket, name, f, file.Size,
+		minio.PutObjectOptions{ContentType: file.Header.Get("Content-Type")})
+
+	logrus.Infof("UploadFile DONE: %s in %v, err=%v", name, time.Since(start), err)
+	return err
+}
+
+// UpdateAlloyFiles — сохраняет имена файлов в БД.
+func (r *Repository) UpdateAlloyFiles(id uint, imgName, videoName string) error {
+	return r.db.Model(&ds.Alloy{}).
+		Where("alloy_id = ?", id).
+		Updates(map[string]interface{}{
+			"alloy_image_url": imgName,
+			"alloy_video_url": videoName,
+		}).Error
+}
+
+func (r *Repository) SoftDeleteAlloy(id, userID uint) error {
+	res := r.db.Model(&ds.Alloy{}).
+		Where("alloy_id = ? AND creator_id = ?", id, userID).
+		Update("alloy_status", "удален")
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return fmt.Errorf("alloy %d not found or not yours", id)
+	}
+	return nil
 }
