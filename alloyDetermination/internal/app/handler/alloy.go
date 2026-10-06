@@ -21,7 +21,7 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	energyStr := ctx.Query("energy")
 	var energy float64
 	if energyStr == "" {
-		energy = 24.0
+		energy = 25.0
 	} else {
 		energy, _ = strconv.ParseFloat(energyStr, 64)
 	}
