@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"alloyDetermination/internal/app/ds"
+	"alloyDetermination/internal/app/repository"
 )
 
 const currentUserID uint = 1
@@ -48,8 +50,7 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   result,
+		"data": result,
 	})
 }
 
@@ -68,13 +69,15 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	likes, _ := h.Repository.GetLikesCount(alloy.ID)
 
 	user := h.GetCurrentUser()
+	liked, _ := h.Repository.IsLikedByUser(user.ID, alloy.ID)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"alloy":   alloy,
-			"likes":   likes,
-			"is_mine": alloy.CreatorID == user.ID,
+			"alloy":    alloy,
+			"likes":    likes,
+			"is_mine":  boolToInt(alloy.CreatorID == user.ID),
+			"is_liked": boolToInt(liked),
 		},
 	})
 }
@@ -90,15 +93,13 @@ func (h *Handler) GetDraftAlloy(ctx *gin.Context) {
 
 	if draft == nil {
 		ctx.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"data":   nil,
+			"data": nil,
 		})
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   draft,
+		"data": draft,
 	})
 }
 
@@ -108,7 +109,6 @@ func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
 	// Проверяем, нет ли уже черновика
 	if existing, _ := h.Repository.GetDraftByCreator(user.ID); existing != nil {
 		ctx.JSON(http.StatusConflict, gin.H{
-			"status":  "error",
 			"message": "draft already exists",
 		})
 		return
@@ -157,47 +157,41 @@ func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
 	draft, _ = h.Repository.GetAlloyByID(draft.ID)
 
 	ctx.JSON(http.StatusCreated, gin.H{
-		"status": "success",
-		"data":   draft,
+		"data": draft,
 	})
 }
+
 func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusBadRequest, err)
+		return
+	}
+
 	var req struct {
-		AlloyID      uint    `json:"alloy_id" binding:"required"`
 		Description  string  `json:"description"`
 		EnergyKev    float64 `json:"energy_kev"`
 		IntensityCps float64 `json:"intensity_cps"`
 	}
-
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	// Проверяем, что это черновик текущего пользователя
 	user := h.GetCurrentUser()
 	draft, err := h.Repository.GetDraftByCreator(user.ID)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusInternalServerError, err)
-		return
-	}
-	if draft == nil || draft.ID != req.AlloyID {
-		ctx.JSON(http.StatusForbidden, gin.H{
-			"status":  "error",
-			"message": "not your draft",
-		})
+	// ...
+	if draft == nil || draft.ID != uint(id) {
+		ctx.JSON(http.StatusForbidden, gin.H{"message": "not your draft"})
 		return
 	}
 
-	if err := h.Repository.PublishAlloy(req.AlloyID, req.Description, req.EnergyKev, req.IntensityCps); err != nil {
+	if err := h.Repository.PublishAlloy(uint(id), req.Description, req.EnergyKev, req.IntensityCps); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "alloy published",
-	})
+	ctx.JSON(http.StatusOK, gin.H{"message": "alloy published"})
 }
 
 func (h *Handler) DeleteAlloy(ctx *gin.Context) {
@@ -216,7 +210,6 @@ func (h *Handler) DeleteAlloy(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
 		"message": "alloy deleted",
 	})
 }
@@ -233,12 +226,15 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 
 	user := h.GetCurrentUser()
 
-	if err := h.Repository.SetLike(user.ID, req.AlloyID, req.Like == 1); err != nil {
+	likes, err := h.Repository.SetLike(req.AlloyID, user.ID, req.Like)
+	if err != nil {
+		if errors.Is(err, repository.ErrAlloyNotFound) {
+			h.errorHandler(ctx, http.StatusNotFound, err)
+			return
+		}
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
-
-	likes, _ := h.Repository.GetLikesCount(req.AlloyID)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "success",
@@ -247,4 +243,11 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 			"likes_count": likes,
 		},
 	})
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

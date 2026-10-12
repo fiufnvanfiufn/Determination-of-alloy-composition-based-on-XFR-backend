@@ -19,24 +19,24 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 	api := router.Group("/api")
 
 	// Каталог и лента
-	api.GET("/alloyCatalog", h.GetCatalogAlloy)
-	api.GET("/alloyFeed", h.GetFeedAlloy)
+	api.GET("/alloys", h.GetCatalogAlloy)
+	api.GET("/alloys/feed", h.GetFeedAlloy)
 
 	// Черновик
-	api.GET("/alloyDraft", h.GetDraftAlloy)
-	api.POST("/alloyDraft", h.PostDraftAlloy) // ← убрать router., поставить api.
+	api.GET("/alloys/draft", h.GetDraftAlloy)
+	api.POST("/alloy/:id/draft", h.PostDraftAlloy)
 
 	// Публикация
-	api.PUT("/alloyPublish", h.PutPublishAlloy) // ← тоже
+	api.PUT("/alloys/:id/publish", h.PutPublishAlloy)
 
 	// Удаление и лайк
-	api.DELETE("/alloyDelete/:id", h.DeleteAlloy)
-	api.POST("/alloyLike", h.PostLikeAlloy)
+	api.DELETE("/alloys/:id", h.DeleteAlloy)
+	api.POST("/alloys/:id/like", h.PostLikeAlloy)
 
 	// Пользователь
-	api.POST("/userRegister", h.PostRegisterUser)
-	api.POST("/userLogin", h.PostLoginUser)
-	api.POST("/userLogout", h.PostLogoutUser)
+	api.POST("/user/register", h.PostRegisterUser)
+	api.POST("/user/login", h.PostLoginUser)
+	api.POST("/user/logout", h.PostLogoutUser)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
