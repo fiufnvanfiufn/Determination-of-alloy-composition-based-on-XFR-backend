@@ -1,7 +1,10 @@
 package ds
 
+import "alloyDetermination/internal/app/role"
+
 type User struct {
-	ID       uint   `gorm:"column:user_id;primaryKey"`
-	Login    string `gorm:"column:user_login;type:varchar(25);unique;not null"`
-	Password string `gorm:"column:user_password;type:varchar(100);not null"`
+	ID       uint      `gorm:"primaryKey;column:user_id" json:"user_id"`
+	Login    string    `gorm:"column:user_login;unique;not null" json:"login"`
+	Password string    `gorm:"column:user_password;not null" json:"-"`
+	Role     role.Role `gorm:"column:role;default:0" json:"role"`
 }

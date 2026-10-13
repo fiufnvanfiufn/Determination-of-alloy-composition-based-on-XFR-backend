@@ -19,6 +19,17 @@ type AlloyDTO struct {
 	LikesCount int64
 }
 
+// GetCatalogAlloy godoc
+// @Summary      Каталог сплавов
+// @Description  Опубликованные сплавы с фильтром по энергии
+// @Tags         alloys
+// @Produce      json
+// @Param        energy query float64 false "Максимальная энергия, keV"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      403
+// @Failure      500  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys [get]
 func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	energyStr := ctx.Query("energy")
 	var energy float64
@@ -34,7 +45,7 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 		return
 	}
 
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 
 	type AlloyResponse struct {
 		ds.Alloy
@@ -54,6 +65,15 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	})
 }
 
+// GetFeedAlloy godoc
+// @Summary      Лента сплавов
+// @Tags         alloys
+// @Produce      json
+// @Param        alloy_id query int false "ID текущего сплава"
+// @Param        next     query bool false "true — следующий, false — предыдущий"
+// @Success      200  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys/feed [get]
 func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	idStr := ctx.Query("alloy_id")
 	nextStr := ctx.Query("next")
@@ -68,11 +88,10 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 
 	likes, _ := h.Repository.GetLikesCount(alloy.ID)
 
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 	liked, _ := h.Repository.IsLikedByUser(user.ID, alloy.ID)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"alloy":    alloy,
 			"likes":    likes,
@@ -82,8 +101,18 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	})
 }
 
+// GetDraftAlloy godoc
+// @Summary      Получить черновик текущего пользователя
+// @Description  Возвращает черновик сплава, созданный текущим пользователем. У одного пользователя не может быть больше одного черновика.
+// @Tags         alloys
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      403
+// @Failure      500  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys/draft [get]
 func (h *Handler) GetDraftAlloy(ctx *gin.Context) {
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 
 	draft, err := h.Repository.GetDraftByCreator(user.ID)
 	if err != nil {
@@ -103,8 +132,19 @@ func (h *Handler) GetDraftAlloy(ctx *gin.Context) {
 	})
 }
 
+// PostDraftAlloy godoc
+// @Summary      Создать черновик сплава
+// @Tags         alloys
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        name  formData string true  "Название сплава"
+// @Param        image formData file   false "Картинка"
+// @Param        video formData file   false "Видео"
+// @Success      201  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys [post]
 func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 
 	// Проверяем, нет ли уже черновика
 	if existing, _ := h.Repository.GetDraftByCreator(user.ID); existing != nil {
@@ -161,6 +201,15 @@ func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
 	})
 }
 
+// PutPublishAlloy godoc
+// @Summary      Опубликовать сплав
+// @Tags         alloys
+// @Accept       json
+// @Produce      json
+// @Param        body body object true "Описание, energy_kev, intensity_cps"
+// @Success      200  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys/publish [put]
 func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -179,7 +228,7 @@ func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
 		return
 	}
 
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 	draft, err := h.Repository.GetDraftByCreator(user.ID)
 	// ...
 	if draft == nil || draft.ID != uint(id) {
@@ -194,6 +243,14 @@ func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "alloy published"})
 }
 
+// DeleteAlloy godoc
+// @Summary      Удалить сплав (soft delete)
+// @Tags         alloys
+// @Produce      json
+// @Param        id path int true "ID сплава"
+// @Success      200  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys/{id} [delete]
 func (h *Handler) DeleteAlloy(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -202,7 +259,7 @@ func (h *Handler) DeleteAlloy(ctx *gin.Context) {
 		return
 	}
 
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 
 	if err := h.Repository.SoftDeleteAlloy(uint(id), user.ID); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
@@ -214,6 +271,15 @@ func (h *Handler) DeleteAlloy(ctx *gin.Context) {
 	})
 }
 
+// PostLikeAlloy godoc
+// @Summary      Поставить/снять лайк
+// @Tags         alloys
+// @Accept       json
+// @Produce      json
+// @Param        body body object true "alloy_id и like (0 или 1)"
+// @Success      200  {object}  map[string]interface{}
+// @Security     BearerAuth
+// @Router       /alloys/like [post]
 func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 	var req struct {
 		AlloyID uint `json:"alloy_id" binding:"required"`
@@ -224,7 +290,7 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 		return
 	}
 
-	user := h.GetCurrentUser()
+	user := h.GetCurrentUser(ctx)
 
 	likes, err := h.Repository.SetLike(req.AlloyID, user.ID, req.Like)
 	if err != nil {
@@ -237,7 +303,6 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"alloy_id":    req.AlloyID,
 			"likes_count": likes,

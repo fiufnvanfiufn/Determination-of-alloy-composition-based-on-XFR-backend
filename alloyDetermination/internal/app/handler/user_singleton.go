@@ -2,16 +2,14 @@ package handler
 
 import (
 	"alloyDetermination/internal/app/ds"
+
+	"github.com/gin-gonic/gin"
 )
 
-var currentUser *ds.User
-
-func (h *Handler) GetCurrentUser() *ds.User {
-	if currentUser == nil {
-		currentUser = &ds.User{
-			ID:    1,
-			Login: "test",
-		}
+func (h *Handler) GetCurrentUser(ctx *gin.Context) *ds.User {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		return nil
 	}
-	return currentUser
+	return &ds.User{ID: userID.(uint)}
 }

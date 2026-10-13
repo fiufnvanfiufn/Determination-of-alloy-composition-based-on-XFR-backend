@@ -1,0 +1,318 @@
+basePath: /api
+definitions:
+  handler.loginReq:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  handler.loginResp:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        description: секунды
+        type: integer
+      token_type:
+        type: string
+    type: object
+  handler.registerReq:
+    description: 'Введите токен в формате: Bearer <JWT>'
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    required:
+    - login
+    - password
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: API для определения состава сплавов
+  title: Alloy Determination API
+  version: "1.0"
+paths:
+  /alloys:
+    get:
+      description: Опубликованные сплавы с фильтром по энергии
+      parameters:
+      - description: Максимальная энергия, keV
+        format: float64
+        in: query
+        name: energy
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Каталог сплавов
+      tags:
+      - alloys
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Название сплава
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Картинка
+        in: formData
+        name: image
+        type: file
+      - description: Видео
+        in: formData
+        name: video
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создать черновик сплава
+      tags:
+      - alloys
+  /alloys/{id}:
+    delete:
+      parameters:
+      - description: ID сплава
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Удалить сплав (soft delete)
+      tags:
+      - alloys
+  /alloys/draft:
+    get:
+      description: Возвращает черновик сплава, созданный текущим пользователем. У
+        одного пользователя не может быть больше одного черновика.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить черновик текущего пользователя
+      tags:
+      - alloys
+  /alloys/feed:
+    get:
+      parameters:
+      - description: ID текущего сплава
+        in: query
+        name: alloy_id
+        type: integer
+      - description: true — следующий, false — предыдущий
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Лента сплавов
+      tags:
+      - alloys
+  /alloys/like:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: alloy_id и like (0 или 1)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Поставить/снять лайк
+      tags:
+      - alloys
+  /alloys/publish:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Описание, energy_kev, intensity_cps
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Опубликовать сплав
+      tags:
+      - alloys
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет логин/пароль, возвращает JWT access_token
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.loginResp'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Логин пользователя
+      tags:
+      - users
+  /users/logout:
+    post:
+      description: Кладёт токен в blacklist Redis
+      parameters:
+      - description: Bearer <token>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Выход из системы
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового пользователя с ролью Buyer
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.registerReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Регистрация пользователя
+      tags:
+      - users
+swagger: "2.0"
