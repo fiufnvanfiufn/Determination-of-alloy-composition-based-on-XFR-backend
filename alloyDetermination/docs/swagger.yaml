@@ -55,15 +55,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "403":
-          description: Forbidden
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
       summary: Каталог сплавов
       tags:
       - alloys
@@ -161,8 +157,6 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
       summary: Лента сплавов
       tags:
       - alloys

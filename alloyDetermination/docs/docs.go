@@ -17,11 +17,6 @@ const docTemplate = `{
     "paths": {
         "/alloys": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Опубликованные сплавы с фильтром по энергии",
                 "produces": [
                     "application/json"
@@ -46,9 +41,6 @@ const docTemplate = `{
                             "type": "object",
                             "additionalProperties": true
                         }
-                    },
-                    "403": {
-                        "description": "Forbidden"
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -145,11 +137,6 @@ const docTemplate = `{
         },
         "/alloys/feed": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],

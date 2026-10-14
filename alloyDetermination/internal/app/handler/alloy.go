@@ -26,9 +26,7 @@ type AlloyDTO struct {
 // @Produce      json
 // @Param        energy query float64 false "Максимальная энергия, keV"
 // @Success      200  {object}  map[string]interface{}
-// @Failure      403
 // @Failure      500  {object}  map[string]interface{}
-// @Security     BearerAuth
 // @Router       /alloys [get]
 func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 	energyStr := ctx.Query("energy")
@@ -72,7 +70,6 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 // @Param        alloy_id query int false "ID текущего сплава"
 // @Param        next     query bool false "true — следующий, false — предыдущий"
 // @Success      200  {object}  map[string]interface{}
-// @Security     BearerAuth
 // @Router       /alloys/feed [get]
 func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	idStr := ctx.Query("alloy_id")
@@ -211,18 +208,13 @@ func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Router       /alloys/publish [put]
 func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
-		return
-	}
-
 	var req struct {
+		AlloyID      uint    `json:"alloy_id" binding:"required"`
 		Description  string  `json:"description"`
 		EnergyKev    float64 `json:"energy_kev"`
 		IntensityCps float64 `json:"intensity_cps"`
 	}
+
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
@@ -230,16 +222,20 @@ func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
 
 	user := h.GetCurrentUser(ctx)
 	draft, err := h.Repository.GetDraftByCreator(user.ID)
-	// ...
-	if draft == nil || draft.ID != uint(id) {
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
+	}
+	if draft == nil || draft.ID != req.AlloyID {
 		ctx.JSON(http.StatusForbidden, gin.H{"message": "not your draft"})
 		return
 	}
 
-	if err := h.Repository.PublishAlloy(uint(id), req.Description, req.EnergyKev, req.IntensityCps); err != nil {
+	if err := h.Repository.PublishAlloy(req.AlloyID, req.Description, req.EnergyKev, req.IntensityCps); err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "alloy published"})
 }
 
