@@ -23,7 +23,6 @@ func (h *Handler) PostRegisterUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"user_id": user.ID,
 			"login":   user.Login,

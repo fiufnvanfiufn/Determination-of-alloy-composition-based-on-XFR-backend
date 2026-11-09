@@ -72,7 +72,6 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	liked, _ := h.Repository.IsLikedByUser(user.ID, alloy.ID)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"alloy":    alloy,
 			"likes":    likes,
@@ -181,7 +180,6 @@ func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
 
 	user := h.GetCurrentUser()
 	draft, err := h.Repository.GetDraftByCreator(user.ID)
-	// ...
 	if draft == nil || draft.ID != uint(id) {
 		ctx.JSON(http.StatusForbidden, gin.H{"message": "not your draft"})
 		return
@@ -237,7 +235,6 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
 		"data": gin.H{
 			"alloy_id":    req.AlloyID,
 			"likes_count": likes,
