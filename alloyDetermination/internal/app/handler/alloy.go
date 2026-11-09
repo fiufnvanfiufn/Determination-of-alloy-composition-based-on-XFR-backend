@@ -49,9 +49,7 @@ func (h *Handler) GetCatalogAlloy(ctx *gin.Context) {
 		})
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"data": result,
-	})
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
@@ -60,24 +58,22 @@ func (h *Handler) GetFeedAlloy(ctx *gin.Context) {
 	id, _ := strconv.Atoi(idStr)
 	next := nextStr == "true"
 
-	alloy, err := h.Repository.GetAlloyFeed(uint(id), next)
+	alloys, err := h.Repository.GetAlloyFeed(uint(id), next)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusNotFound, err)
 		return
 	}
 
-	likes, _ := h.Repository.GetLikesCount(alloy.ID)
+	likes, _ := h.Repository.GetLikesCount(alloys.ID)
 
 	user := h.GetCurrentUser()
-	liked, _ := h.Repository.IsLikedByUser(user.ID, alloy.ID)
+	liked, _ := h.Repository.IsLikedByUser(user.ID, alloys.ID)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"alloy":    alloy,
-			"likes":    likes,
-			"is_mine":  boolToInt(alloy.CreatorID == user.ID),
-			"is_liked": boolToInt(liked),
-		},
+		"alloy":    alloys,
+		"likes":    likes,
+		"is_mine":  boolToInt(alloys.CreatorID == user.ID),
+		"is_liked": boolToInt(liked),
 	})
 }
 
@@ -155,9 +151,7 @@ func (h *Handler) PostDraftAlloy(ctx *gin.Context) {
 	// Перечитываем с обновлёнными полями
 	draft, _ = h.Repository.GetAlloyByID(draft.ID)
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"data": draft,
-	})
+	ctx.JSON(http.StatusCreated, draft)
 }
 
 func (h *Handler) PutPublishAlloy(ctx *gin.Context) {
@@ -235,10 +229,8 @@ func (h *Handler) PostLikeAlloy(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"alloy_id":    req.AlloyID,
-			"likes_count": likes,
-		},
+		"alloy_id":    req.AlloyID,
+		"likes_count": likes,
 	})
 }
 
